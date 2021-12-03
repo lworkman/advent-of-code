@@ -3,8 +3,14 @@ struct State {
   y: i32,
 }
 
+struct AdvancedState {
+  x: i32,
+  y: i32,
+  aim: i32,
+}
+
 fn main() {
-  // let instructions = [
+  // let instructions = vec![
   //   "forward 5",
   //   "down 5",
   //   "forward 8",
@@ -1016,8 +1022,9 @@ fn main() {
     "forward 2",
   ];
 
-  let final_state: State = basic(instructions);
+  let final_state = advanced(instructions);
 
+  println!("{},{}", final_state.x, final_state.y);
   println!("{}", final_state.x * final_state.y);
 }
 
@@ -1033,6 +1040,23 @@ fn basic(instructions: Vec<&str>) -> State {
         "back" => back(acc, value),
         "up" => up(acc, value),
         "down" => down(acc, value),
+        _ => acc,
+      }
+    });
+}
+
+fn advanced(instructions: Vec<&str>) -> AdvancedState {
+  return instructions
+    .iter()
+    .fold(AdvancedState { y: 0, x: 0, aim: 0 }, |acc, instruction| {
+      let split: Vec<&str> = instruction.split(" ").collect();
+      let direction = split[0];
+      let value: i32 = split[1].parse().unwrap();
+      match direction {
+        "forward" => forward_advanced(acc, value),
+        "back" => back_advanced(acc, value),
+        "up" => up_advanced(acc, value),
+        "down" => down_advanced(acc, value),
         _ => acc,
       }
     });
@@ -1069,6 +1093,46 @@ fn down(state: State, count: i32) -> State {
   let output = State {
     y: state.y + count,
     x: state.x,
+  };
+
+  return output;
+}
+
+fn forward_advanced(state: AdvancedState, count: i32) -> AdvancedState {
+  let output = AdvancedState {
+    y: state.y + (state.aim * count),
+    x: state.x + count,
+    aim: state.aim
+  };
+
+  return output;
+}
+
+fn back_advanced(state: AdvancedState, count: i32) -> AdvancedState {
+  let output = AdvancedState {
+    y: state.y,
+    x: state.x - count,
+    aim: state.aim
+  };
+
+  return output;
+}
+
+fn up_advanced(state: AdvancedState, count: i32) -> AdvancedState {
+  let output = AdvancedState {
+    y: state.y,
+    x: state.x,
+    aim: state.aim - count,
+  };
+
+  return output;
+}
+
+fn down_advanced(state: AdvancedState, count: i32) -> AdvancedState {
+  let output = AdvancedState {
+    y: state.y,
+    x: state.x,
+    aim: state.aim + count
   };
 
   return output;
