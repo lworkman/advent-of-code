@@ -1,46 +1,58 @@
+use std::fs;
+
 fn main() {
-  let lines = vec![build_line((0, 0), (0, 2)), build_line((0, 1), (0, 3))];
+  let filename: &str = "./src/test.txt";
+  let contents = fs::read_to_string(filename).unwrap();
 
-  let (length, height) = lines.iter().fold((0, 0), |(saved_x, saved_y), line| {
-    let mut x_to_return = 0;
-    let mut y_to_return = 0;
+  println!("{:?}", contents.split("\r\n").collect::<Vec<&str>>().into_iter().map(|line| {
+    let split_lines = line.split(" -> ");
+    let first_pair = split_lines.next();
+    let second_pair = split_lines.next();
+  })
+  )
 
-    for (x, y) in line.iter() {
-      if saved_x > *x {
-        x_to_return = saved_x;
-      } else {
-        x_to_return = *x;
-      }
-      if saved_y > *y {
-        y_to_return = saved_y;
-      } else {
-        y_to_return = *y;
-      }
-    }
+  // let lines = vec![build_line((0, 0), (0, 2)), build_line((0, 1), (0, 3))];
 
-    return (x_to_return, y_to_return);
-  });
+  // let (length, height) = lines.iter().fold((0, 0), |(saved_x, saved_y), line| {
+  //   let mut x_to_return = 0;
+  //   let mut y_to_return = 0;
 
-  let mut count: usize = 0;
+  //   for (x, y) in line.iter() {
+  //     if saved_x > *x {
+  //       x_to_return = saved_x;
+  //     } else {
+  //       x_to_return = *x;
+  //     }
+  //     if saved_y > *y {
+  //       y_to_return = saved_y;
+  //     } else {
+  //       y_to_return = *y;
+  //     }
+  //   }
 
-  for x in 0..length + 1 {
-    for y in 0..height + 1 {
-      let how_many_lines_contain = lines
-        .clone()
-        .into_iter()
-        .filter(|line| line.contains(&(x, y)))
-        .count();
+  //   return (x_to_return, y_to_return);
+  // });
 
-      if how_many_lines_contain >= 2 {
-        count = count + how_many_lines_contain;
-      } else {
-        count = count;
-      }
-    }
-  }
+  // let mut count: usize = 0;
 
-  println!("{:?}", count);
-  println!("{:?}", lines);
+  // for x in 0..length + 1 {
+  //   for y in 0..height + 1 {
+  //     let how_many_lines_contain = lines
+  //       .clone()
+  //       .into_iter()
+  //       .filter(|line| line.contains(&(x, y)))
+  //       .count();
+
+  //     if how_many_lines_contain >= 2 {
+  //       count = count + how_many_lines_contain;
+  //     } else {
+  //       count = count;
+  //     }
+  //   }
+  // }
+
+  // println!("{:?}", count);
+  // println!("{:?}", lines);
 }
 
 fn build_line(start: (usize, usize), end: (usize, usize)) -> Vec<(usize, usize)> {
