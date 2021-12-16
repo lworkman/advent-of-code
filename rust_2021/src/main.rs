@@ -1,153 +1,103 @@
 #![allow(dead_code)]
-use std::collections::HashMap;
 use std::fs;
 
-fn main() {
+struct Fish {
+  countdown: isize,
+  base: isize,
+}
 
+fn main() {
   let filename: &str = "./src/input.txt";
   let contents = fs::read_to_string(filename).unwrap();
+  let limit = 256;
 
-  advanced(contents);
+  // basic(limit, contents.clone());
+  advanced(limit, contents);
 }
 
-fn advanced(input: String) {
-  let coords = input
-    .split("\n")
-    .collect::<Vec<&str>>()
+fn advanced(limit: isize, contents: String) {
+  let mut fishes = contents
+    .split(",")
     .into_iter()
-    .map(|line| {
-      let mut split_line = line.split(" -> ");
-      let first_coor = get_coordinate(split_line.next().unwrap());
-      let second_coor = get_coordinate(split_line.next().unwrap());
-      return (first_coor, second_coor);
+    .map(|num| {
+      let actual_num: usize = num.parse().unwrap();
+
+      return actual_num;
     })
-    .map(|(first, second)| {
-      if first.0 == second.0 || first.1 == second.1 {
-        return build_line(first, second);
+    .collect::<Vec<usize>>();
+
+  let mut fish_days = vec![0, 0, 0, 0, 0, 0, 0, 0, 0];
+
+  for fish in fishes {
+    fish_days[fish] = fish_days[fish] + 1;
+  }
+
+
+  for _i in 0..limit {
+    let mut new_population = vec![0, 0, 0, 0, 0, 0, 0, 0, 0];
+    for j in 0..9 {
+      if j == 0 {
+        new_population[8] = fish_days[j].clone();
+        new_population[6] = fish_days[j].clone();
       } else {
-        return build_line_diagonal(first, second);
+        new_population[j - 1] = new_population[j - 1] + fish_days[j];
       }
-    })
-    .flatten()
-    .fold(HashMap::new(), |mut acc, coor| {
-      let coor_key = format!("{},{}", coor.0, coor.1);
-      if acc.get(&coor_key) == None {
-        acc.insert(coor_key.clone(), 0);
-      }
-
-      let new_value = acc.get(&coor_key).unwrap() + 1;
-      acc.insert(coor_key, new_value);
-      return acc;
-    });
-
-  let count = coords
-    .into_iter()
-    .filter(|(_, val)| {
-      return *val > 1;
-    })
-    .count();
-
-  println!("{}", count);
-}
-
-fn basic(input: String) {
-  let coords = input
-    .split("\n")
-    .collect::<Vec<&str>>()
-    .into_iter()
-    .map(|line| {
-      let mut split_line = line.split(" -> ");
-      let first_coor = get_coordinate(split_line.next().unwrap());
-      let second_coor = get_coordinate(split_line.next().unwrap());
-      return (first_coor, second_coor);
-    })
-    .filter(|(first, second)| return first.0 == second.0 || first.1 == second.1)
-    .map(|(first, second)| return build_line(first, second))
-    .flatten()
-    .fold(HashMap::new(), |mut acc, coor| {
-      let coor_key = format!("{},{}", coor.0, coor.1);
-      if acc.get(&coor_key) == None {
-        acc.insert(coor_key.clone(), 0);
-      }
-
-      let new_value = acc.get(&coor_key).unwrap() + 1;
-      acc.insert(coor_key, new_value);
-      return acc;
-    });
-
-  let count = coords
-    .into_iter()
-    .filter(|(_, val)| {
-      return *val > 1;
-    })
-    .count();
-
-  println!("{}", count);
-}
-
-fn get_coordinate(input: &str) -> (usize, usize) {
-  let mut split = input.split(",");
-  let x = split.next().unwrap().parse().unwrap();
-  let y = split.next().unwrap().parse().unwrap();
-
-  return (x, y);
-}
-
-fn build_line(start: (usize, usize), end: (usize, usize)) -> Vec<(usize, usize)> {
-  let mut output: Vec<(usize, usize)> = vec![];
-
-  let mut low_x = start.0;
-  let mut high_x = end.0;
-  let mut low_y = start.1;
-  let mut high_y = end.1;
-
-  if start.0 > end.0 {
-    low_x = end.0;
-    high_x = start.0;
+    }
+    fish_days = new_population;
   }
 
-  if start.1 > end.1 {
-    low_y = end.1;
-    high_y = start.1;
-  }
-
-  for x in low_x..high_x + 1 {
-    for y in low_y..high_y + 1 {
-      output.push((x, y));
-    }
-  }
-  return output;
+  println!("Advanced: {}", fish_days.iter().sum::<usize>());
 }
 
-fn build_line_diagonal(start: (usize, usize), end: (usize, usize)) -> Vec<(usize, usize)> {
-  let mut output: Vec<(usize, usize)> = vec![];
+fn basic(limit: isize, contents: String) {
+  let mut fishes: Vec<Fish> = contents
+    .split(",")
+    .into_iter()
+    .map(|num| {
+      let actual_num = num.parse().unwrap();
 
-  let is_x_positive = start.0 < end.0;
-  let is_y_positive = start.1 < end.1;
+      return Fish {
+        countdown: actual_num,
+        base: 6,
+      };
+    })
+    .collect();
 
-  
-  let int_x = i32::try_from(start.0).ok().unwrap();
-  let int_y = i32::try_from(end.0).ok().unwrap();
+  for _i in 0..limit {
+    fishes = run_round(fishes);
+    // println!("{}, {:?}", _i, fishes.iter().count());
+  }
 
-  for num in 0..(int_x - int_y).abs() + 1 {
-    let mut new_x = start.0 + (num as usize);
-    let mut new_y = start.1 + (num as usize);
+  println!("Basic: {:?}", fishes.iter().count());
+}
 
-    if !is_x_positive {
-      new_x = start.0 - (num as usize);
+fn run_round(fishes: Vec<Fish>) -> Vec<Fish> {
+  let mut output = Vec::with_capacity(100000000);
+
+  for mut fish in fishes.into_iter() {
+    fish.countdown = fish.countdown - 1;
+
+    if fish.countdown > -1 {
+      output.push(fish);
+    } else {
+      output.push(make_fish());
+      output.push(make_child());
     }
-
-    if !is_y_positive {
-      new_y = start.1 - (num as usize);
-    }
-
-    output.push((new_x, new_y))
   }
 
   return output;
 }
 
-// Turn each instruction into a vec of coordinates
-// Discard instructions that aren't straight lines
-// Determine size of grid
-// Check how many arrays each spot on the grid is in, count how many are in more than 2
+fn make_fish() -> Fish {
+  return Fish {
+    countdown: 6,
+    base: 6,
+  };
+}
+
+fn make_child() -> Fish {
+  return Fish {
+    countdown: 8,
+    base: 8,
+  };
+}
