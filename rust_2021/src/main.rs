@@ -1,66 +1,29 @@
 #![allow(dead_code)]
 use std::fs;
+
 fn main() {
-  let filename: &str = "./src/input.txt";
+  let filename: &str = "./src/test.txt";
   let contents = fs::read_to_string(filename).unwrap();
 
-  let mut collection = contents
-    .split(",")
-    .map(|num| {
-      let actual_num: isize = num.parse().unwrap();
-
-      return actual_num;
-    })
-    .collect::<Vec<isize>>();
-
-  collection.sort();
-
-  let count = collection.iter().count();
-  let median;
-
-  if count % 2 == 0 {
-    median = collection[(count / 2 - 1)];
-  } else {
-    let smaller = ((count / 2) as f32).floor() - 1_f32;
-    let bigger = smaller + 1_f32;
-    median = (collection[bigger as usize] + collection[smaller as usize]) / 2;
-  }
-
-  let fuel_count = collection.into_iter().fold(0, |acc, num| {
-    let amt = ((num - median) as f32).abs() as isize;
-    return acc + amt;
-  });
-
-  println!("Fueld count: {}", fuel_count);
+  build_instructions(contents);
 }
 
-fn basic(contents: String) {
-  let mut collection = contents
-    .split(",")
-    .map(|num| {
-      let actual_num: isize = num.parse().unwrap();
+fn build_instructions(contents: String) {
+  println!(
+    "{:?}",
+    contents.split("\r").into_iter().collect::<Vec<&str>>()
+  );
+}
 
-      return actual_num;
-    })
-    .collect::<Vec<isize>>();
-
-  collection.sort();
-
-  let count = collection.iter().count();
-  let median;
-
-  if count % 2 == 0 {
-    median = collection[(count / 2 - 1)];
-  } else {
-    let smaller = ((count / 2) as f32).floor() - 1_f32;
-    let bigger = smaller + 1_f32;
-    median = (collection[bigger as usize] + collection[smaller as usize]) / 2;
-  }
-
-  let fuel_count = collection.into_iter().fold(0, |acc, num| {
-    let amt = ((num - median) as f32).abs() as isize;
-    return acc + amt;
-  });
-
-  println!("Fueld count: {}", fuel_count);
+fn get_key() {
+  let zero = ["a", "b", "c", "d"];
+  let one = ["c", "f"];
+  let two = ["a", "c", "d", "e", "g"];
+  let three = ["a", "c", "d", "f", "g"];
+  let four = ["b", "c", "d", "f"];
+  let five = ["a", "b", "d", "f", "g"];
+  let six = ["a", "b", "d", "e", "f", "g"];
+  let seven = ["a", "c", "f"];
+  let eight = ["a", "b", "c", "d", "e", "f", "g"];
+  let nine = ["a", "b", "c", "d", "f", "g"];
 }
