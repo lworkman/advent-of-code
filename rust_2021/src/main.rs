@@ -1,6 +1,7 @@
 #![allow(dead_code)]
 use std::collections::HashMap;
 use std::fs;
+use std::cmp::Ordering;
 
 struct ClockNumbers<'a> {
   zero: Vec<&'a str>,
@@ -72,10 +73,45 @@ fn main() {
 
   // should map to c,f
 
-  map_numbers(vec![
-    "ab", "eafb", "dab", "cdfbe", "acedgfb", "gcdfa", "fbcad", "cefabd", "cdfgeb", "cagedb",
-    "eafb", "cdbaf", "cdfeb", "fcadb", "cdfeb",
-  ]);
+  advanced(contents);
+
+  // map_numbers(vec![
+  //   // "ab", 
+  //   // "eafb", 
+  //   // "dab",
+  //   // "cdfgeb",
+  //   // "cdfbe", 
+  //   // "acedgfb", 
+  //   // "gcdfa", 
+  //   // "fbcad", 
+  //   // "cefabd", 
+  //   // "cagedb",
+  //   // "eafb", 
+  //   // "cdbaf", 
+  //   // "cdfeb", 
+  //   // "fcadb", 
+  //   // "cdfeb",
+  //   // "edbfga", "begcd", "cbg", "gc", "gcadebf", "fbgde", "acbgfd", "abcde", "gfcbed", "gfec"
+  // ], vec![
+  //   // "cdfeb", "fcadb", "cdfeb", "cdbaf"
+  //   // "fcgedb", "cgb", "dgebacf", "gc"
+  //   ]);
+}
+
+fn advanced(contents: String) {
+  let code_pairs = contents.split("\n").into_iter().map(|line| {
+    let mut double = line.split(" | ");
+    let codes = double.next().unwrap().split(" ").filter(|char| char != &"").collect::<Vec<&str>>();
+    let output_codes = double.next().unwrap().split(" ").filter(|char| char != &"").collect::<Vec<&str>>();
+
+    return (codes, output_codes);
+  }).collect::<Vec<(Vec<&str>, Vec<&str>)>>();
+
+  let sum = code_pairs.into_iter().fold(0, |sum, (code, output_codes)| {
+    return sum + map_numbers(code, output_codes);
+  });
+  
+  println!("{:?}", sum);
 }
 
 fn basic(contents: String) {
@@ -113,7 +149,7 @@ fn check_code(code: &str) -> bool {
   return count == one_count || count == four_count || count == seven_count || count == eight_count;
 }
 
-fn map_numbers(codes: Vec<&str>) {
+fn map_numbers(mut codes: Vec<&str>, output_code: Vec<&str>) -> isize {
   let mut clock_map = HashMap::from([
     ("a", vec!["a", "b", "c", "d", "e", "f", "g"]),
     ("b", vec!["a", "b", "c", "d", "e", "f", "g"]),
@@ -124,60 +160,132 @@ fn map_numbers(codes: Vec<&str>) {
     ("g", vec!["a", "b", "c", "d", "e", "f", "g"]),
   ]);
 
-  // for each code
-  for code in codes.clone() {
-    let keys = get_key();
+  println!("{:?}", codes);
+  codes.sort_by(|a, b| {
+    let a_len = a.len();
+    let b_len = b.len();
 
-    let mut potential_matches = vec![];
-    // for each key
-    for key in keys {
-      if key.iter().count() == code.len() {
-        potential_matches.push(key.clone());
+    if a_len > b_len {
+      return Ordering::Greater;
+    } else if a_len == b_len {
+      return Ordering::Equal;
+    } else {
+      return Ordering::Less;
+    }});
+  println!("{:?}", codes);
+
+
+  for _ in 0..10 {
+    // for each code
+    for code in codes.clone() {
+      let keys = get_key();
+  
+      let mut best_match: Vec<String> = vec![];
+  
+      let best_guess = generate_permutations(clock_map.clone(), code);
+  
+      if best_guess != None {
+        best_match = best_guess.unwrap();
+        // println!("{} has to be {}", code, best_match.join(""));
+      } else {
+        // println!("Can't properly match {}", code);
+      }
+  
+      if best_match != vec![] as Vec<String>  {
+        // println!("{} matches {:?}", code, best_match);
+  
+        let str_arr = best_match.iter().map(|char| &**char).collect::<Vec<&str>>();
+  
+        let mut new_map = clock_map.clone();
+        for (map_char, _) in &clock_map {
+          if code.contains(map_char) {
+            let new_entries = new_map
+              .get(map_char)
+              .unwrap()
+              .clone()
+              .into_iter()
+              .filter(|elem| str_arr.contains(elem))
+              .collect::<Vec<&str>>();
+  
+            new_map.insert(map_char, new_entries);
+          } else {
+            let new_entries = new_map
+              .get(map_char)
+              .unwrap()
+              .clone()
+              .into_iter()
+              .filter(|elem| !str_arr.contains(elem))
+              .collect::<Vec<&str>>();
+  
+            new_map.insert(map_char, new_entries);
+          }
+        }
+        clock_map = new_map;
       }
     }
-
-    if potential_matches.len() == 1 {
-      let matches_to_use = &potential_matches[0];
-      println!("{} matches {:?}", code, potential_matches);
-      let mut new_map = clock_map.clone();
-      for (map_char, _) in &clock_map {
-        if code.contains(map_char) {
-          let new_entries = new_map
-            .get(map_char)
-            .unwrap()
-            .clone()
-            .into_iter()
-            .filter(|elem| matches_to_use.contains(elem))
-            .collect::<Vec<&str>>();
-
-          new_map.insert(map_char, new_entries);
-        } else {
-          let new_entries = new_map
-            .get(map_char)
-            .unwrap()
-            .clone()
-            .into_iter()
-            .filter(|elem| !matches_to_use.contains(elem))
-            .collect::<Vec<&str>>();
-
-          new_map.insert(map_char, new_entries);
-        }
-      }
-      clock_map = new_map;
+  
+    if has_proper_key(&clock_map) {
+      // println!("We're good!");
+      break;
     }
   }
 
-  println!("{:?}", clock_map);
+  if has_proper_key(&clock_map) {
+    let mut nums = vec![];
+    for code in output_code {
+      nums.push(translate_code(&clock_map, code).to_string());
+    }
 
-  generate_permutations(clock_map, "cdfgeb");
+    return nums.join("").parse().unwrap();
+  } else {
+    println!("Something broke");
+    return 0;
+  }
+
+  // println!("{:?}", clock_map);
 }
 
-// cdfgeb = gadebf = 6
+fn translate_code(map: &HashMap<&str, Vec<&str>>, code: &str) -> isize {
+  let keys = get_key();
+  let mut converted = code
+    .split("")
+    .filter(|char| *char != "")
+    .map(|char| map.get(char).unwrap()[0])
+    .collect::<Vec<&str>>();
 
-// cdfgeb != eabgdc
-// cdfgeb = abdefg
+  converted.sort();
 
-fn generate_permutations(map: HashMap<&str, Vec<&str>>, code: &str) {
+  if keys.one == converted {
+    return 1;
+  } else if keys.two == converted {
+    return 2;
+  } else if keys.three == converted {
+    return 3;
+  } else if keys.four == converted {
+    return 4;
+  } else if keys.five == converted {
+    return 5;
+  } else if keys.six == converted {
+    return 6;
+  } else if keys.seven == converted {
+    return 7;
+  } else if keys.eight == converted {
+    return 8;
+  } else if keys.nine == converted {
+    return 9;
+  } else if keys.zero == converted {
+    return 0;
+  } else {
+    println!("Something went wrong, {:?}", converted);
+    return 0;
+  }
+}
+
+fn has_proper_key(map: &HashMap<&str, Vec<&str>>) -> bool {
+  return map.iter().all( |(_, elem)| elem.iter().count() == 1);
+}
+
+fn generate_permutations(map: HashMap<&str, Vec<&str>>, code: &str) -> Option<Vec<String>> {
   let mut permutations: Vec<String> = vec![];
 
   for char in code
@@ -209,16 +317,14 @@ fn generate_permutations(map: HashMap<&str, Vec<&str>>, code: &str) {
 
               let new_string = format!("{}{}", internal_value, k);
 
-              // let mut string_collection = new_string
-              //   .split("")
-              //   .filter(|char| *char != "")
-              //   .collect::<Vec<&str>>();
+              let mut string_collection = new_string
+                .split("")
+                .filter(|char| *char != "")
+                .collect::<Vec<&str>>();
 
-              // string_collection.sort();
+              string_collection.sort();
 
-              // return string_collection.join("");
-
-              return new_string;
+              return string_collection.join("");
             })
             .collect::<Vec<String>>();
 
@@ -227,19 +333,55 @@ fn generate_permutations(map: HashMap<&str, Vec<&str>>, code: &str) {
         .flatten()
         .collect::<Vec<String>>();
       permutations = new_permuations;
-      permutations.sort();
     }
   }
 
-  permutations = permutations.into_iter().filter(|elem| elem.len() == code.len()).collect();
-
+  
+  permutations = permutations
+  .into_iter()
+  .filter(|elem| elem.len() == code.len())
+  .collect();
+  
+  permutations.sort();
   permutations.dedup();
+  
+  // unique combinations not allowed
+  
+  permutations = permutations
+    .into_iter()
+    .filter(|set| {
+      let mut string_collection = set
+        .split("")
+        .filter(|char| *char != "")
+        .collect::<Vec<&str>>();
 
-  // unique combinations allowed
+      string_collection.sort();
 
-  // check which are valid
+      let keys = get_key();
 
-  println!("{:?}", permutations);
+      return keys.one == string_collection || 
+      keys.two == string_collection ||
+      keys.three == string_collection ||
+      keys.four == string_collection ||
+      keys.five == string_collection ||
+      keys.six == string_collection ||
+      keys.seven == string_collection ||
+      keys.eight == string_collection ||
+      keys.nine == string_collection ||
+      keys.zero == string_collection;
+    })
+    .collect();
+
+  if permutations.len() == 1 {
+    let code = permutations[0]
+    .split("")
+    .filter(|char| *char != "")
+    .map(|char| char.to_string())
+    .collect::<Vec<String>>();
+    return Some(code);
+  }
+
+  return None;
 }
 
 fn get_key<'a>() -> ClockNumbers<'a> {
