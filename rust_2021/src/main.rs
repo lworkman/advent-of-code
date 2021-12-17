@@ -73,13 +73,8 @@ fn main() {
   // should map to c,f
 
   map_numbers(vec![
-    "ab", "eafb", "dab",
-    "cdfbe",
-    "acedgfb",
-    "gcdfa",
-     "fbcad", "cefabd", "cdfgeb", "cagedb", "eafb",
-    "cdbaf",
-    "cdfeb", "fcadb", "cdfeb",
+    "ab", "eafb", "dab", "cdfbe", "acedgfb", "gcdfa", "fbcad", "cefabd", "cdfgeb", "cagedb",
+    "eafb", "cdbaf", "cdfeb", "fcadb", "cdfeb",
   ]);
 }
 
@@ -129,7 +124,6 @@ fn map_numbers(codes: Vec<&str>) {
     ("g", vec!["a", "b", "c", "d", "e", "f", "g"]),
   ]);
 
-
   // for each code
   for code in codes.clone() {
     let keys = get_key();
@@ -174,8 +168,79 @@ fn map_numbers(codes: Vec<&str>) {
   }
 
   println!("{:?}", clock_map);
+
+  generate_permutations(clock_map, "cdfgeb");
 }
 
+// cdfgeb = gadebf = 6
+
+// cdfgeb != eabgdc
+// cdfgeb = abdefg
+
+fn generate_permutations(map: HashMap<&str, Vec<&str>>, code: &str) {
+  let mut permutations: Vec<String> = vec![];
+
+  for char in code
+    .split("")
+    .filter(|elem| *elem != "")
+    .collect::<Vec<&str>>()
+  {
+    let keys = map.get(char).unwrap();
+    if permutations.iter().count() == 0 {
+      let mut basic_permuation = keys
+        .clone()
+        .into_iter()
+        .map(|str| format!("{}", str))
+        .collect::<Vec<String>>();
+      permutations.append(&mut basic_permuation);
+    } else {
+      let new_permuations = permutations
+        .into_iter()
+        .map(|elem| {
+          let output = keys
+            .iter()
+            .map(|k| {
+              let val = elem.clone();
+              let internal_value = val;
+
+              if (internal_value.contains(k)) {
+                return String::from("");
+              }
+
+              let new_string = format!("{}{}", internal_value, k);
+
+              // let mut string_collection = new_string
+              //   .split("")
+              //   .filter(|char| *char != "")
+              //   .collect::<Vec<&str>>();
+
+              // string_collection.sort();
+
+              // return string_collection.join("");
+
+              return new_string;
+            })
+            .collect::<Vec<String>>();
+
+          return output;
+        })
+        .flatten()
+        .collect::<Vec<String>>();
+      permutations = new_permuations;
+      permutations.sort();
+    }
+  }
+
+  permutations = permutations.into_iter().filter(|elem| elem.len() == code.len()).collect();
+
+  permutations.dedup();
+
+  // unique combinations allowed
+
+  // check which are valid
+
+  println!("{:?}", permutations);
+}
 
 fn get_key<'a>() -> ClockNumbers<'a> {
   return ClockNumbers {
